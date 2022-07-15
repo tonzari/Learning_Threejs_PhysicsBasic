@@ -21,7 +21,16 @@ debugObject.createSphere = () =>
     )
 }
 debugObject.createBox = () => {
-    createBox(1,1,1,{x:1,y:5,z:1})
+    createBox(
+        Math.random() * 2 + 0.1,
+        Math.random() * 2 + 0.1,
+        Math.random() * 2 + 0.1,
+        {
+            x: (Math.random() - 0.5) * 3, 
+            y: 4, 
+            z: (Math.random() - 0.5) * 3
+        }
+    )
 }
 gui.add(debugObject, "createSphere")
 gui.add(debugObject, "createBox")
@@ -81,7 +90,7 @@ const contactPlasticConcrete = new CANNON.ContactMaterial(
     concrete,
     {
         friction: 0.1,
-        restitution: 0.4
+        restitution: 0.1
     }
 )
 
@@ -229,7 +238,7 @@ const createSphere = (radius, position) => {
     //physics
     const shape = new CANNON.Sphere(radius)
     const body = new CANNON.Body({
-        mass: 1,
+        mass: radius * 0.5,
         position: new CANNON.Vec3(0,3,0),
         shape: shape, // this is the same as 'shape: shape' in js if the names are the same you can omit the value
         material: plastic
@@ -250,7 +259,7 @@ const createBox = (width, height, length, position) => {
     //physics
     const shape = new CANNON.Box(new CANNON.Vec3(width*0.5,height*0.5,length*0.5))
     const body = new CANNON.Body({
-        mass: 1,
+        mass: ((width * height * length) * 0.33) * 0.5,
         position: new CANNON.Vec3(0,5,0),
         shape: shape,
         material: plastic
@@ -261,18 +270,6 @@ const createBox = (width, height, length, position) => {
 
     objectsToUpdate.push({mesh: mesh, body: body})
 }
-
-// createSphere(1, {x: 1.2, y: 3, z: 0})
-// createSphere(0.5, {x: 0, y: 4, z: 0})
-// createSphere(0.1, {x: 1, y: 5, z: 0})
-// createSphere(0.5, {x: 0, y: 6, z: 0})
-// createSphere(0.1, {x: 1, y: 5, z: 0})
-// createSphere(0.5, {x: 1, y: 6, z: 0})
-// createSphere(0.1, {x: 1, y: 9, z: 1})
-
-// for(let i = 1; i < 30; i++) {
-//     createSphere(i * 0.1, {x: i * 0.1, y: i*4, z: i+0.01})
-// }
 
 /**
  * Animate
