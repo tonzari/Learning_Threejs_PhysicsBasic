@@ -8,7 +8,19 @@ import CANNON from 'cannon'
  * Debug
  */
 const gui = new dat.GUI()
-
+const debugObject = {}
+debugObject.createSphere = () =>
+{
+    createSphere(
+        Math.random() * 0.5, 
+        {
+            x: (Math.random() - 0.5) * 3, 
+            y: 4, 
+            z: (Math.random() - 0.5) * 3
+        }
+    )
+}
+gui.add(debugObject, "createSphere")
 /**
  * Base
  */
@@ -38,7 +50,8 @@ const environmentMapTexture = cubeTextureLoader.load([
 */
 
 const world = new CANNON.World()
-
+world.broadphase = new CANNON.SAPBroadphase(world)
+world.allowSleep = true
 world.gravity.set(0,-9.82,0)
 
 const plastic = new CANNON.Material("plastic")
@@ -179,21 +192,24 @@ UTILS
 
 const objectsToUpdate = []
 
+
+const sphereGeom = new THREE.SphereBufferGeometry(1, 20, 20)
+const myMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3,
+    roughness: 0.4,
+    envMap: environmentMapTexture
+})
+
 const createSphere = (radius, position) => {
-    const mesh = new THREE.Mesh(
-        new THREE.SphereBufferGeometry(radius, 20, 20),
-        new THREE.MeshStandardMaterial({
-            metalness: 0.3,
-            roughness: 0.4,
-            envMap: environmentMapTexture
-        }))
+    const mesh = new THREE.Mesh(sphereGeom, myMaterial)
     mesh.castShadow = true
+    mesh.scale.set(radius, radius, radius)
     mesh.position.copy(position)
     scene.add(mesh)
 
     const shape = new CANNON.Sphere(radius)
     const body = new CANNON.Body({
-        mass: 1,
+        mass: 1 * radius,
         position: new CANNON.Vec3(0,3,0),
         shape: shape // this is the same as 'shape: shape' in js if the names are the same you can omit the value
     })
@@ -203,10 +219,17 @@ const createSphere = (radius, position) => {
     objectsToUpdate.push({mesh: mesh, body: body})
 }
 
-createSphere(0.5, {x: 1.2, y: 3, z: 0})
-createSphere(0.5, {x: 0, y: 4, z: 0})
-createSphere(0.5, {x: 1, y: 5, z: 0})
-createSphere(0.5, {x: 0, y: 6, z: 0})
+// createSphere(1, {x: 1.2, y: 3, z: 0})
+// createSphere(0.5, {x: 0, y: 4, z: 0})
+// createSphere(0.1, {x: 1, y: 5, z: 0})
+// createSphere(0.5, {x: 0, y: 6, z: 0})
+// createSphere(0.1, {x: 1, y: 5, z: 0})
+// createSphere(0.5, {x: 1, y: 6, z: 0})
+// createSphere(0.1, {x: 1, y: 9, z: 1})
+
+// for(let i = 1; i < 30; i++) {
+//     createSphere(i * 0.1, {x: i * 0.1, y: i*4, z: i+0.01})
+// }
 
 /**
  * Animate
@@ -223,6 +246,7 @@ const tick = () =>
     // Update physics
     for(const obj of objectsToUpdate) {
         obj.mesh.position.copy(obj.body.position)
+        obj.mesh.quaternion.copy(obj.body.quaternion)
     }
 
     world.step(1/60, deltaTime, 3)
