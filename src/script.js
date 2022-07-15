@@ -20,7 +20,12 @@ debugObject.createSphere = () =>
         }
     )
 }
+debugObject.createBox = () => {
+    createBox(1,1,1,{x:1,y:5,z:1})
+}
 gui.add(debugObject, "createSphere")
+gui.add(debugObject, "createBox")
+
 /**
  * Base
  */
@@ -29,6 +34,20 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+/* 
+SOUNDS
+*/
+const hitSound = new Audio('/sounds/hit.mp3')
+
+const playHitSound = (collision) => {
+    const impactStrength = collision.contact.getImpactVelocityAlongNormal()
+    if(impactStrength > 1.5) {
+        hitSound.volume = Math.random()
+        hitSound.currentTime = 0
+        hitSound.play()
+    }
+}
 
 /**
  * Textures
@@ -62,7 +81,7 @@ const contactPlasticConcrete = new CANNON.ContactMaterial(
     concrete,
     {
         friction: 0.1,
-        restitution: 0.3
+        restitution: 0.4
     }
 )
 
@@ -81,7 +100,7 @@ world.addContactMaterial(contactPlasticConcrete)
 const floorShape = new CANNON.Plane()
 const floorBody = new CANNON.Body()
 floorBody.material = concrete
-floorBody.mass = 0
+floorBody.mass = 1
 floorBody.addShape(floorShape)
 floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1,0,0), Math.PI * 0.5)
 
@@ -192,8 +211,9 @@ UTILS
 
 const objectsToUpdate = []
 
-
 const sphereGeom = new THREE.SphereBufferGeometry(1, 20, 20)
+const boxGeom = new THREE.BoxGeometry(1,1,1)
+
 const myMaterial = new THREE.MeshStandardMaterial({
     metalness: 0.3,
     roughness: 0.4,
@@ -206,14 +226,37 @@ const createSphere = (radius, position) => {
     mesh.scale.set(radius, radius, radius)
     mesh.position.copy(position)
     scene.add(mesh)
-
+    //physics
     const shape = new CANNON.Sphere(radius)
     const body = new CANNON.Body({
-        mass: 1 * radius,
+        mass: 1,
         position: new CANNON.Vec3(0,3,0),
-        shape: shape // this is the same as 'shape: shape' in js if the names are the same you can omit the value
+        shape: shape, // this is the same as 'shape: shape' in js if the names are the same you can omit the value
+        material: plastic
     })
     body.position.copy(position)
+    body.addEventListener('collide', playHitSound)
+    world.addBody(body)
+
+    objectsToUpdate.push({mesh: mesh, body: body})
+}
+
+const createBox = (width, height, length, position) => {
+    const mesh = new THREE.Mesh(boxGeom, myMaterial)
+    mesh.castShadow = true
+    mesh.scale.set(width,height,length)
+    mesh.position.copy(position)
+    scene.add(mesh)
+    //physics
+    const shape = new CANNON.Box(new CANNON.Vec3(width*0.5,height*0.5,length*0.5))
+    const body = new CANNON.Body({
+        mass: 1,
+        position: new CANNON.Vec3(0,5,0),
+        shape: shape,
+        material: plastic
+    })
+    body.position.copy(position)
+    body.addEventListener('collide', playHitSound)
     world.addBody(body)
 
     objectsToUpdate.push({mesh: mesh, body: body})
